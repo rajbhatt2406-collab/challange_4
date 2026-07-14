@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+:root {
+  --background: #041009;
+  --foreground: #f0fdf4;
+  --pitch-green: #0B4F2E;
+  --pitch-green-light: #157E4B;
+  --pitch-green-dark: #052615;
+  --chalk-white: #fcfdfd;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-pitch-green: #0B4F2E;
+  --color-pitch-green-light: #157E4B;
+  --color-pitch-green-dark: #052615;
+  --color-chalk-white: #fcfdfd;
+  --color-scoreboard-black: #020804;
+  --color-scoreboard-green: #00ff66;
+  --color-scoreboard-amber: #ffbb00;
+  --color-scoreboard-red: #ff3333;
+  --font-sans: var(--font-outfit), system-ui, sans-serif;
+  --font-mono: var(--font-scoreboard), monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* Scoreboard style glow helper */
+.glow-green {
+  text-shadow: 0 0 8px rgba(0, 255, 102, 0.7);
+}
+
+.glow-amber {
+  text-shadow: 0 0 8px rgba(255, 187, 0, 0.7);
+}
+
+.glow-red {
+  text-shadow: 0 0 8px rgba(255, 51, 51, 0.7);
+}
+
+.glow-border-green {
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
+}
+
+/* Accessibility Focus Indicator */
+*:focus-visible {
+  outline: 3px solid #00ff66 !important;
+  outline-offset: 2px !important;
+}
+
+/* High Contrast Adjustments */
+.high-contrast {
+  --background: #000000;
+  --foreground: #ffffff;
+  --pitch-green: #008833;
+  --pitch-green-light: #00ff66;
+  --pitch-green-dark: #000000;
+  --chalk-white: #ffffff;
+}
+
+.high-contrast * {
+  border-color: #ffffff !important;
+  text-shadow: none !important;
+}
+
+/* Font scale adjustments */
+.font-scale-lg {
+  font-size: 1.125rem; /* 18px */
+}
+.font-scale-xl {
+  font-size: 1.25rem; /* 20px */
+}
+
+/* Reduced Motion Overlay */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-delay: -1ms !important;
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  background-attachment: scroll !important;
+  scroll-behavior: auto !important;
+  transition-delay: 0s !important;
+  transition-duration: 0s !important;
+}
