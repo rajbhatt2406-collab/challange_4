@@ -5,6 +5,7 @@ import { AccessibilityProvider } from '@/features/accessibility/AccessibilityCon
 import AccessibilityControls from '@/features/accessibility/AccessibilityControls';
 import WayfindingConcierge from '@/features/wayfinding/WayfindingConcierge';
 import OpsDashboard from '@/features/ops-dashboard/OpsDashboard';
+import TransportAdvisory from '@/features/ops-dashboard/TransportAdvisory';
 import SustainabilityWidget from '@/features/sustainability/SustainabilityWidget';
 import SimplifyText from '@/features/accessibility/SimplifyText';
 import { Shield } from 'lucide-react';
@@ -81,6 +82,12 @@ export default function CommandCenter() {
           <section aria-label="Crowd and Operations Intel">
             <h2 className="sr-only">Operations Control</h2>
             <OpsDashboard />
+          </section>
+
+          {/* Section 2.5: Transport Advisory */}
+          <section aria-label="Transportation and Congestion Advisory">
+            <h2 className="sr-only">Transportation Advisory</h2>
+            <TransportAdvisory />
           </section>
 
           {/* Section 3: Concierge Chat grid */}

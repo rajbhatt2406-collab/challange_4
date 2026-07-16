@@ -35,3 +35,9 @@ CREATE POLICY "Allow public insert access to incidents"
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_incidents_created_at ON public.incidents (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_incidents_status ON public.incidents (status);
+
+-- ALTER TABLE migration to add CHECK constraints mirroring Zod validations (defense-in-depth)
+ALTER TABLE public.incidents
+    ADD CONSTRAINT chk_description_length CHECK (length(description) >= 5 AND length(description) <= 1000),
+    ADD CONSTRAINT chk_confidence_range CHECK (confidence >= 0.0 AND confidence <= 1.0),
+    ADD CONSTRAINT chk_classification_enum CHECK (classification IN ('medical_emergency', 'crowd_hazard', 'facility_damage', 'security_breach', 'logistics'));
