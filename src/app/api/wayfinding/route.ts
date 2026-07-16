@@ -7,7 +7,11 @@ import { Schema } from '@google/generative-ai';
 
 const requestSchema = z.object({
   query: z.string().min(1).max(500),
-  startNode: z.string().default('gate-a')
+  // Constrain startNode to known venue node IDs to prevent prompt injection
+  startNode: z.string().default('gate-a').refine(
+    (val) => VENUE_NODES.some(n => n.id === val),
+    { message: 'Invalid startNode: must be a known venue node ID' }
+  )
 });
 
 /**
@@ -34,6 +38,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { query, startNode } = body;
+  // Strip null bytes and control characters before embedding in AI prompt (defense-in-depth)
+  const sanitizedQuery = query.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
   try {
     // 3. Gemini Function Calling to resolve destination node and intent
@@ -64,7 +70,7 @@ export async function POST(req: NextRequest) {
       required: ['intent', 'destination_id', 'language_detected', 'translated_response']
     } as unknown as Schema;
 
-    const prompt = `User at start node "${startNode}" asks: "${query}".
+    const prompt = `User at start node "${startNode}" asks: "${sanitizedQuery}".
     Classify their intent and map it to the closest venue destination ID in our stadium map.
     Provide the response in the user's language.`;
 
@@ -87,7 +93,7 @@ export async function POST(req: NextRequest) {
     // 4. Stream detailed directions token-by-token
     const streamingModel = getGeminiModel('gemini-1.5-flash');
     const streamPrompt = `You are a friendly World Cup 2026 stadium wayfinding helper.
-    The user is asking: "${query}" (detected language: ${language_detected}).
+    The user is asking: "${sanitizedQuery}" (detected language: ${language_detected}).
     The classified intent is ${intent} and destination node is "${destination_id}" (described as: "${VENUE_NODES.find(n => n.id === destination_id)?.description}").
     Write a short, friendly guiding response (2-3 sentences max) in the language "${language_detected}".
     Start directly with the directions, beginning with: "${translated_response}". Do not add markdown or headers.`;
@@ -129,7 +135,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.warn('Gemini wayfinding failed (e.g. invalid key). Falling back to keyword search.', error);
 
-    const queryLower = query.toLowerCase();
+    const queryLower = sanitizedQuery.toLowerCase();
     let intent = 'HELP';
     let destination_id = 'gate-a';
     let language_detected = 'en';

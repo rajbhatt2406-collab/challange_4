@@ -4,8 +4,11 @@ import { getGeminiModel } from '@/lib/gemini/client';
 import { isAllowed } from '@/lib/gemini/rateLimiter';
 import { Schema } from '@google/generative-ai';
 
+// Known gate IDs from venueGraph — constrain to prevent prompt injection
+const VALID_GATE_IDS = ['gate-a', 'gate-b', 'gate-c', 'gate-d'] as const;
+
 const alertRequestSchema = z.object({
-  gateId: z.string().min(1),
+  gateId: z.enum(VALID_GATE_IDS),
   occupancy: z.number().min(0).max(100)
 });
 

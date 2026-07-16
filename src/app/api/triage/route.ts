@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { description } = body;
+  // Strip null bytes and control characters before embedding in AI prompt (defense-in-depth)
+  const sanitizedDescription = description.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
   try {
     const model = getGeminiModel('gemini-1.5-flash');
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
       required: ['classification', 'recommended_action', 'severity', 'confidence']
     } as unknown as Schema;
 
-    const prompt = `Analyze this stadium operations incident report: "${description}".
+    const prompt = `Analyze this stadium operations incident report: "${sanitizedDescription}".
     Classify the category, assign severity, recommend an action, and estimate confidence.`;
 
     const result = await model.generateContent({
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.warn('Gemini triage failed (e.g. invalid key). Falling back to keyword evaluator.', error);
 
-    const descLower = description.toLowerCase();
+    const descLower = sanitizedDescription.toLowerCase();
     let classification = 'logistics';
     let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';
     let recommended_action = 'Notify zone supervisor for review.';

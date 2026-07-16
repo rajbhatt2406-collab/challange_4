@@ -4,8 +4,11 @@ import { getGeminiModel } from '@/lib/gemini/client';
 import { isAllowed } from '@/lib/gemini/rateLimiter';
 import { Schema } from '@google/generative-ai';
 
+// Known transport sector IDs — constrain to prevent prompt injection
+const VALID_TRANSPORT_IDS = ['shuttle-express', 'shuttle-regional', 'lot-west', 'lot-east'] as const;
+
 const transportAlertRequestSchema = z.object({
-  transportId: z.string().min(1),
+  transportId: z.enum(VALID_TRANSPORT_IDS),
   occupancy: z.number().min(0).max(100)
 });
 

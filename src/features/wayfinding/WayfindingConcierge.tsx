@@ -114,11 +114,16 @@ export default function WayfindingConcierge() {
           </select>
         </div>
 
-        {/* Chat Bubbles */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-sm">
+        {/* Chat Bubbles — aria-live announces new messages to screen readers */}
+        <div
+          className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-sm"
+          aria-live="polite"
+          aria-label="Wayfinding conversation feed"
+          aria-atomic="false"
+        >
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-emerald-600/80 space-y-3">
-              <HelpCircle className="w-12 h-12 stroke-[1.5]" />
+              <HelpCircle aria-hidden="true" className="w-12 h-12 stroke-[1.5]" />
               <p className="max-w-xs text-xs font-mono leading-relaxed">
                 ASK IN ANY LANGUAGE:<br />
                 {"\"¿Dónde están los baños?\""}<br />
@@ -187,6 +192,7 @@ export default function WayfindingConcierge() {
             onChange={(e) => setInputText(e.target.value)}
             placeholder={isListening ? "Listening..." : "Ask directions..."}
             disabled={isListening}
+            aria-busy={isStreaming}
             className="flex-1 bg-scoreboard-black border border-emerald-900/80 rounded-lg px-3 py-2 text-sm text-chalk-white placeholder-emerald-800 focus:outline-none focus:border-scoreboard-green focus-visible:ring-1 focus-visible:ring-scoreboard-green font-sans"
             aria-label="Concierge query input"
           />

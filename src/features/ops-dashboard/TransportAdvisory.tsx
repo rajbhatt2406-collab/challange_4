@@ -24,7 +24,7 @@ export default function TransportAdvisory() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-emerald-950/80 pb-4">
         <div>
           <h3 className="text-xs font-mono text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Bus className="w-4 h-4 text-scoreboard-green" />
+            <Bus aria-hidden="true" className="w-4 h-4 text-scoreboard-green" />
             LIVE TRANSIT & PARKING RADAR
           </h3>
           <p className="text-[10px] font-mono text-emerald-600 block mt-0.5 tracking-wider">
@@ -58,7 +58,7 @@ export default function TransportAdvisory() {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-mono font-semibold text-chalk-white flex items-center gap-1.5">
-                      <Icon className="w-3.5 h-3.5 text-emerald-500" />
+                      <Icon aria-hidden="true" className="w-3.5 h-3.5 text-emerald-500" />
                       {sector.name}
                     </span>
                     <span className={`text-sm font-mono font-bold ${
@@ -68,9 +68,16 @@ export default function TransportAdvisory() {
                     </span>
                   </div>
 
-                  {/* Progress bar */}
-                  <div className="w-full bg-emerald-950/40 rounded-full h-2 overflow-hidden">
-                    <div 
+                  {/* Progress bar — ARIA progressbar for screen readers */}
+                  <div
+                    role="progressbar"
+                    aria-valuenow={sector.occupancy}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${sector.name} capacity: ${sector.occupancy}%${isOverLimit ? ' — WARNING: congestion above 85%' : ''}`}
+                    className="w-full bg-emerald-950/40 rounded-full h-2 overflow-hidden"
+                  >
+                    <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         isOverLimit ? 'bg-scoreboard-red' : 'bg-scoreboard-green'
                       }`}
@@ -80,7 +87,7 @@ export default function TransportAdvisory() {
 
                   {isAlertLoading[sector.id] && (
                     <div className="flex items-center gap-1 mt-1.5">
-                      <RefreshCw className="w-2.5 h-2.5 text-scoreboard-amber animate-spin" />
+                      <RefreshCw aria-hidden="true" className="w-2.5 h-2.5 text-scoreboard-amber animate-spin" />
                       <span className="text-[9px] font-mono text-scoreboard-amber block animate-pulse">
                         EVALUATING ROUTING PATH...
                       </span>

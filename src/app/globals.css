@@ -49,6 +49,10 @@ body {
   box-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
 }
 
+.glow-border-red {
+  box-shadow: 0 0 8px rgba(255, 51, 51, 0.4);
+}
+
 /* Accessibility Focus Indicator */
 *:focus-visible {
   outline: 3px solid #00ff66 !important;
@@ -63,6 +67,10 @@ body {
   --pitch-green-light: #00ff66;
   --pitch-green-dark: #000000;
   --chalk-white: #ffffff;
+  /* Override scoreboard colors for WCAG AA compliance in high-contrast mode */
+  --color-scoreboard-green: #ffffff;
+  --color-scoreboard-amber: #ffee00;
+  --color-scoreboard-red: #ff6666;
 }
 
 .high-contrast * {

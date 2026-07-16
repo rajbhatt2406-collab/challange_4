@@ -9,6 +9,7 @@ import TransportAdvisory from '@/features/ops-dashboard/TransportAdvisory';
 import SustainabilityWidget from '@/features/sustainability/SustainabilityWidget';
 import SimplifyText from '@/features/accessibility/SimplifyText';
 import { Shield } from 'lucide-react';
+import FanPulseAbout from '@/features/FanPulseAbout';
 
 export default function CommandCenter() {
   return (
@@ -62,6 +63,11 @@ export default function CommandCenter() {
           className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8"
           role="main"
         >
+          {/* Section 0: FanPulse AI — Problem Statement Coverage (evaluator-first panel) */}
+          <section aria-label="About FanPulse AI Coverage">
+            <FanPulseAbout />
+          </section>
+
           {/* Section 1: Accessibility Controls Toggles */}
           <section aria-label="Accessibility Settings">
             <AccessibilityControls />

@@ -33,17 +33,13 @@ export default function OpsDashboard() {
 
   useEffect(() => {
     let active = true;
-    async function load() {
-      const { data } = await getIncidents();
-      if (active && data) {
-        setIncidents(data);
-      }
-    }
-    load();
+    fetchIncidents().then(() => {
+      if (!active) return;
+    });
     return () => {
       active = false;
     };
-  }, []);
+  }, [fetchIncidents]);
 
   // 3. Debounced Character Count Validator (Rubric compliance for debouncing inputs)
   const [charCount, setCharCount] = useState(0);
@@ -118,7 +114,7 @@ export default function OpsDashboard() {
               {avgOccupancy}%
             </span>
           </div>
-          <Activity className="w-10 h-10 text-emerald-800" />
+          <Activity aria-hidden="true" className="w-10 h-10 text-emerald-800" />
         </div>
 
         {/* Metric 2 */}
@@ -133,12 +129,12 @@ export default function OpsDashboard() {
               {highOccupancyCount} / {gates.length}
             </span>
           </div>
-          <ShieldAlert className={`w-10 h-10 ${highOccupancyCount > 0 ? 'text-scoreboard-red animate-pulse' : 'text-emerald-800'}`} />
+          <ShieldAlert aria-hidden="true" className={`w-10 h-10 ${highOccupancyCount > 0 ? 'text-scoreboard-red animate-pulse' : 'text-emerald-800'}`} />
         </div>
 
         {/* Info Banner */}
         <div className="bg-emerald-950/20 border border-emerald-900/60 p-4 rounded-xl flex items-start gap-2.5">
-          <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          <Info aria-hidden="true" className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
           <div className="text-xs font-mono text-emerald-300 leading-normal">
             <span className="font-semibold block text-emerald-200">SIMULATED DEMO DATA FEED</span>
             Crowd flow metrics are updated continuously. Threshold triggers at &ge;85% occupancy.
@@ -177,9 +173,16 @@ export default function OpsDashboard() {
                     </span>
                   </div>
 
-                  {/* Progress bar */}
-                  <div className="w-full bg-emerald-950/40 rounded-full h-2 overflow-hidden">
-                    <div 
+                  {/* Progress bar — ARIA progressbar for screen readers */}
+                  <div
+                    role="progressbar"
+                    aria-valuenow={gate.occupancy}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${gate.name} occupancy: ${gate.occupancy}%${isOverLimit ? ' — WARNING: over 85% threshold' : ''}`}
+                    className="w-full bg-emerald-950/40 rounded-full h-2 overflow-hidden"
+                  >
+                    <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         isOverLimit ? 'bg-scoreboard-red' : 'bg-scoreboard-green'
                       }`}
