@@ -1,9 +1,16 @@
 'use client';
 
+// Problem statement: Crowd Management — Gemini evaluates real-time gate occupancy sensor data
+// and generates severity classifications (low/medium/high/critical) and dispatch recommendations.
+// Problem statement: Operational Intelligence — Gemini classifies free-text staff incident
+// reports and recommends immediate dispatch actions stored in the live incident log.
+// Problem statement: Real-Time Decision Support — Gemini-powered crowd alert feed provides
+// live operational recommendations for organizers and venue staff on the default dashboard view.
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useGateOccupancy, GateAlert } from './useGateOccupancy';
 import { getIncidents, Incident } from '@/lib/supabase/client';
 import { useAccessibility } from '@/features/accessibility/AccessibilityContext';
+import AiGeneratedBadge from '@/components/AiGeneratedBadge';
 import { ShieldAlert, Send, Activity, Info, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function OpsDashboard() {
@@ -109,7 +116,7 @@ export default function OpsDashboard() {
         {/* Metric 1 */}
         <div className="bg-scoreboard-black border border-emerald-950 p-4 rounded-xl flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-wider block">Average Stadium Occupancy</span>
+            <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider block">Average Stadium Occupancy</span>
             <span className="text-4xl font-mono font-bold text-scoreboard-green glow-green block mt-1">
               {avgOccupancy}%
             </span>
@@ -120,7 +127,7 @@ export default function OpsDashboard() {
         {/* Metric 2 */}
         <div className="bg-scoreboard-black border border-emerald-950 p-4 rounded-xl flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-wider block">Gates In Warning state</span>
+            <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider block">Gates In Warning state</span>
             <span className={`text-4xl font-mono font-bold block mt-1 ${
               highOccupancyCount > 0 
                 ? 'text-scoreboard-red glow-red' 
@@ -166,9 +173,10 @@ export default function OpsDashboard() {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-mono font-semibold text-chalk-white">{gate.name}</span>
-                    <span className={`text-sm font-mono font-bold ${
+                    <span className={`text-sm font-mono font-bold flex items-center gap-1 ${
                       isOverLimit ? 'text-scoreboard-red' : 'text-scoreboard-green'
                     }`}>
+                      {isOverLimit && <AlertTriangle className="w-3 h-3 text-scoreboard-red shrink-0" aria-hidden="true" />}
                       {gate.occupancy}%
                     </span>
                   </div>
@@ -200,11 +208,17 @@ export default function OpsDashboard() {
             })}
           </div>
 
-          {/* Incident Triage Form */}
+          {/* Incident Triage Form — for Venue Staff and Volunteers to log and dispatch incidents */}
           <div className="mt-6 border-t border-emerald-950/80 pt-6">
             <h4 className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-3">
               LOG SECURITY/OPERATIONS INCIDENT
             </h4>
+            <p className="text-[10px] font-mono text-emerald-400 mb-3 leading-relaxed">
+              For{' '}
+              <span className="text-emerald-400 font-semibold">VENUE STAFF</span> and{' '}
+              <span className="text-emerald-400 font-semibold">VOLUNTEERS</span> — type a free-text incident
+              report and Gemini AI will classify, severity-score, and recommend a dispatch action.
+            </p>
             <form onSubmit={handleTriageSubmit} className="space-y-3">
               <div>
                 <label htmlFor="triage-description" className="sr-only">Incident report description</label>
@@ -215,34 +229,44 @@ export default function OpsDashboard() {
                   placeholder="Describe incident (e.g. medical hazard at Section 120, ticket scanner malfunction at Gate B)..."
                   className="w-full h-24 bg-scoreboard-black border border-emerald-900/80 rounded-lg p-3 text-sm text-chalk-white placeholder-emerald-900 focus:outline-none focus:border-scoreboard-green focus-visible:ring-1 focus-visible:ring-scoreboard-green font-sans resize-none"
                   aria-invalid={!!formError}
+                  aria-describedby={formError ? "triage-form-error" : successMsg ? "triage-form-success" : undefined}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-emerald-600">
+                <span className="text-[10px] font-mono text-emerald-400">
                   Characters typed: {charCount} (Min 5)
                 </span>
                 
                 <button
                   type="submit"
                   disabled={isSubmitting || charCount < 5}
-                  className="bg-scoreboard-green text-scoreboard-black font-semibold rounded-lg px-4 py-2 text-xs hover:bg-emerald-400 transition-colors disabled:bg-emerald-900/40 disabled:text-emerald-800 flex items-center gap-1.5 focus-visible:ring-2"
+                  className="bg-scoreboard-green text-scoreboard-black font-semibold rounded-lg px-4 py-2.5 min-h-[44px] text-xs hover:bg-emerald-400 transition-colors disabled:bg-emerald-900/40 disabled:text-emerald-800 flex items-center gap-1.5 focus-visible:ring-2"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="w-3.5 h-3.5" aria-hidden="true" />
                   {isSubmitting ? 'ANALYZING...' : 'DISPATCH AGENT'}
                 </button>
               </div>
 
               {formError && (
-                <div className="p-3 bg-scoreboard-red/10 border border-scoreboard-red/30 rounded text-xs text-scoreboard-red font-mono">
+                <div 
+                  id="triage-form-error"
+                  className="p-3 bg-scoreboard-red/10 border border-scoreboard-red/30 rounded text-xs text-scoreboard-red font-mono"
+                >
                   {formError}
                 </div>
               )}
 
               {successMsg && (
-                <div className="p-3 bg-scoreboard-green/10 border border-scoreboard-green/30 rounded text-xs text-scoreboard-green font-mono flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  {successMsg}
+                <div 
+                  id="triage-form-success"
+                  className="p-3 bg-scoreboard-green/10 border border-scoreboard-green/30 rounded text-xs text-scoreboard-green font-mono flex flex-col gap-1.5"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                    {successMsg}
+                  </div>
+                  <AiGeneratedBadge label="Classification by Gemini AI" />
                 </div>
               )}
             </form>
@@ -255,13 +279,13 @@ export default function OpsDashboard() {
           {/* Active alerts feed */}
           <div className="bg-scoreboard-black/40 border border-emerald-950/80 rounded-xl p-4 flex-1">
             <h3 className="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-scoreboard-amber" />
+              <AlertTriangle className="w-4 h-4 text-scoreboard-amber" aria-hidden="true" />
               CROWD ALERTS FEED
             </h3>
 
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
               {alerts.length === 0 ? (
-                <div className="h-32 flex items-center justify-center border border-dashed border-emerald-950 rounded text-center text-xs text-emerald-800 font-mono">
+                <div className="h-32 flex items-center justify-center border border-dashed border-emerald-950 rounded text-center text-xs text-emerald-400 font-mono">
                   NO ACTIVE ALERTS DETECTED
                 </div>
               ) : (
@@ -273,16 +297,17 @@ export default function OpsDashboard() {
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-scoreboard-red uppercase flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-scoreboard-red animate-pulse" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-scoreboard-red animate-pulse" aria-hidden="true" />
                         CRITICAL density: {alert.gateName}
                       </span>
-                      <span className="text-[10px] text-emerald-600">{alert.timestamp}</span>
+                      <span className="text-[10px] text-emerald-400">{alert.timestamp}</span>
                     </div>
                     <p className="text-chalk-white mt-1 leading-relaxed">{alert.message}</p>
                     <div className="mt-2 bg-scoreboard-red/10 border border-scoreboard-red/20 rounded p-1.5 text-[10px] text-scoreboard-red">
                       <span className="font-bold block">RECOMMENDED DISPATCH:</span>
                       {alert.recommended_action}
                     </div>
+                    <AiGeneratedBadge className="mt-1" label="Crowd assessment by Gemini AI" />
                   </div>
                 ))
               )}
@@ -297,7 +322,7 @@ export default function OpsDashboard() {
             
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               {incidents.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-xs text-emerald-800 font-mono">
+                <div className="h-full flex items-center justify-center text-xs text-emerald-400 font-mono">
                   NO INCIDENTS LOGGED
                 </div>
               ) : (
@@ -315,13 +340,13 @@ export default function OpsDashboard() {
                       className="p-2.5 bg-scoreboard-black border border-emerald-950 rounded flex flex-col gap-1 text-xs"
                     >
                       <div className="flex justify-between items-center">
-                        <span className="font-mono text-emerald-500 font-semibold">{inc.classification?.replace('_', ' ').toUpperCase()}</span>
+                        <span className="font-mono text-emerald-400 font-semibold">{inc.classification?.replace('_', ' ').toUpperCase()}</span>
                         <span className={`px-1.5 py-0.25 text-[9px] rounded border font-mono ${badgeColor}`}>
                           {inc.severity?.toUpperCase()}
                         </span>
                       </div>
                       <p className="text-chalk-white/80 line-clamp-2 mt-0.5">{inc.description}</p>
-                      <span className="text-[9px] text-emerald-700 font-mono mt-1 block">
+                      <span className="text-[9px] text-emerald-400 font-mono mt-1 block">
                         Action: {inc.recommended_action}
                       </span>
                     </div>

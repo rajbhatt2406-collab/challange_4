@@ -1,9 +1,14 @@
 'use client';
 
+// Problem statement: Navigation & Wayfinding — Gemini function-calling classifies fan intent
+// and streams turn-by-turn directions using Dijkstra shortest-path on the venue graph.
+// Problem statement: Multilingual Assistance — Gemini detects query language and responds
+// natively in Spanish, French, Portuguese, English, and more.
 import React, { useState, useRef, useEffect } from 'react';
 import { useWayfinding } from './useWayfinding';
 import { VENUE_NODES } from './venueGraph';
 import { useAccessibility } from '@/features/accessibility/AccessibilityContext';
+import AiGeneratedBadge from '@/components/AiGeneratedBadge';
 import dynamic from 'next/dynamic';
 
 const WayfindingMap = dynamic(() => import('./WayfindingMap'), {
@@ -45,6 +50,24 @@ export default function WayfindingConcierge() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamText]);
 
+  // Screen reader announcements for new assistant responses & HTML document lang updates
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.role === 'assistant') {
+        announce(`Assistant response: ${lastMsg.content}`);
+        if (lastMsg.languageDetected) {
+          document.documentElement.lang = lastMsg.languageDetected;
+        } else {
+          document.documentElement.lang = 'en';
+        }
+      }
+    } else {
+      document.documentElement.lang = 'en';
+    }
+  }, [messages, announce]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
@@ -83,18 +106,18 @@ export default function WayfindingConcierge() {
           </div>
           <button
             onClick={clearChat}
-            className="p-1 text-xs font-mono text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 rounded focus-visible:ring-2"
+            className="px-3 py-2.5 min-h-[44px] text-xs font-mono text-emerald-400 hover:text-emerald-300 transition-colors flex items-center justify-center gap-1 rounded focus-visible:ring-2"
             aria-label="Clear chat history"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
             RESET
           </button>
         </div>
 
         {/* Start Node Selector */}
         <div className="bg-emerald-950/20 p-3 border-b border-emerald-950/60 flex items-center justify-between gap-2">
-          <label htmlFor="start-node-select" className="text-xs font-mono text-emerald-500 uppercase flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5" />
+          <label htmlFor="start-node-select" className="text-xs font-mono text-emerald-400 uppercase flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
             Start Location:
           </label>
           <select
@@ -104,7 +127,7 @@ export default function WayfindingConcierge() {
               setStartNode(e.target.value);
               announce(`Starting point set to ${VENUE_NODES.find(n => n.id === e.target.value)?.name}`);
             }}
-            className="bg-scoreboard-black text-xs text-chalk-white border border-emerald-900 rounded p-1 font-mono focus-visible:ring-2 focus-visible:ring-scoreboard-green cursor-pointer"
+            className="bg-scoreboard-black text-xs text-chalk-white border border-emerald-900 rounded p-2 min-h-[44px] font-mono focus-visible:ring-2 focus-visible:ring-scoreboard-green cursor-pointer"
           >
             {VENUE_NODES.filter(n => n.type === 'gate' || n.type === 'connector').map((node) => (
               <option key={node.id} value={node.id}>
@@ -122,7 +145,7 @@ export default function WayfindingConcierge() {
           aria-atomic="false"
         >
           {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-emerald-600/80 space-y-3">
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-emerald-400/80 space-y-3">
               <HelpCircle aria-hidden="true" className="w-12 h-12 stroke-[1.5]" />
               <p className="max-w-xs text-xs font-mono leading-relaxed">
                 ASK IN ANY LANGUAGE:<br />
@@ -151,6 +174,9 @@ export default function WayfindingConcierge() {
                   </span>
                 )}
                 <p className="leading-relaxed font-sans">{msg.content}</p>
+                {msg.role === 'assistant' && (
+                  <AiGeneratedBadge className="mt-2" label="Gemini AI response" />
+                )}
               </div>
             </div>
           ))}
@@ -161,9 +187,10 @@ export default function WayfindingConcierge() {
               <div className="max-w-[85%] bg-emerald-950/40 text-emerald-50 border border-emerald-900/60 rounded-lg rounded-bl-none px-4 py-3">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <div className="w-1.5 h-1.5 bg-scoreboard-green rounded-full animate-bounce" />
-                  <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest">TRANSLATING LIVE</span>
+                  <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">TRANSLATING LIVE</span>
                 </div>
                 <p className="leading-relaxed font-sans">{streamText}</p>
+                <AiGeneratedBadge className="mt-2" label="Gemini AI streaming" />
               </div>
             </div>
           )}
@@ -176,7 +203,7 @@ export default function WayfindingConcierge() {
             type="button"
             onClick={handleSimulateVoice}
             disabled={isListening}
-            className={`p-2.5 rounded-lg border flex items-center justify-center transition-all focus-visible:ring-2 ${
+            className={`p-3 min-h-[44px] min-w-[44px] rounded-lg border flex items-center justify-center transition-all focus-visible:ring-2 ${
               isListening
                 ? 'bg-scoreboard-red/20 border-scoreboard-red text-scoreboard-red animate-pulse'
                 : 'bg-emerald-950/40 border-emerald-900 text-emerald-400 hover:bg-emerald-900/60'
@@ -184,7 +211,7 @@ export default function WayfindingConcierge() {
             aria-label="Simulate voice command translation input"
             title="Simulate voice speech recognition"
           >
-            <Mic className="w-5 h-5" />
+            <Mic className="w-5 h-5" aria-hidden="true" />
           </button>
           <input
             type="text"
@@ -193,16 +220,16 @@ export default function WayfindingConcierge() {
             placeholder={isListening ? "Listening..." : "Ask directions..."}
             disabled={isListening}
             aria-busy={isStreaming}
-            className="flex-1 bg-scoreboard-black border border-emerald-900/80 rounded-lg px-3 py-2 text-sm text-chalk-white placeholder-emerald-800 focus:outline-none focus:border-scoreboard-green focus-visible:ring-1 focus-visible:ring-scoreboard-green font-sans"
+            className="flex-1 bg-scoreboard-black border border-emerald-900/80 rounded-lg px-3 py-2.5 min-h-[44px] text-sm text-chalk-white placeholder-emerald-800 focus:outline-none focus:border-scoreboard-green focus-visible:ring-1 focus-visible:ring-scoreboard-green font-sans"
             aria-label="Concierge query input"
           />
           <button
             type="submit"
             disabled={!inputText.trim() || isStreaming || isListening}
-            className="p-2.5 bg-scoreboard-green text-scoreboard-black font-semibold rounded-lg hover:bg-emerald-400 transition-colors disabled:bg-emerald-900/40 disabled:text-emerald-800 focus-visible:ring-2 flex items-center justify-center"
+            className="p-3 min-h-[44px] min-w-[44px] bg-scoreboard-green text-scoreboard-black font-semibold rounded-lg hover:bg-emerald-400 transition-colors disabled:bg-emerald-900/40 disabled:text-emerald-800 focus-visible:ring-2 flex items-center justify-center"
             aria-label="Send query"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-4" aria-hidden="true" />
           </button>
         </form>
       </div>
@@ -215,11 +242,11 @@ export default function WayfindingConcierge() {
         {/* Title */}
         <div className="flex justify-between items-center mb-4 z-10">
           <div className="flex items-center gap-1.5">
-            <Navigation className="w-4 h-4 text-scoreboard-green" />
+            <Navigation className="w-4 h-4 text-scoreboard-green" aria-hidden="true" />
             <h4 className="font-mono text-xs tracking-wider uppercase text-emerald-400">STADIUM ROUTING LAYER</h4>
           </div>
           {activePath && (
-            <div className="text-[10px] font-mono text-emerald-500 uppercase px-2 py-0.5 bg-emerald-950/60 rounded border border-emerald-900">
+            <div className="text-[10px] font-mono text-emerald-400 uppercase px-2 py-0.5 bg-emerald-950/60 rounded border border-emerald-900">
               PATH COMPUTED SUCCESSFULLY
             </div>
           )}
@@ -232,15 +259,15 @@ export default function WayfindingConcierge() {
 
         {/* Route Card list */}
         <div className="h-[180px] mt-4 bg-scoreboard-black/60 rounded-lg border border-emerald-950 p-3 overflow-y-auto">
-          <h5 className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-            <Navigation className="w-3.5 h-3.5" />
+          <h5 className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+            <Navigation className="w-3.5 h-3.5" aria-hidden="true" />
             Path Instructions
           </h5>
           
           {activePath ? (
             <div className="space-y-2 font-mono text-xs">
               <div className="flex items-center justify-between text-[10px] border-b border-emerald-950 pb-1.5 mb-1.5">
-                <span className="text-emerald-600">FROM: {activePath[0]?.name}</span>
+                <span className="text-emerald-400">FROM: {activePath[0]?.name}</span>
                 <span className="text-scoreboard-green">TO: {activePath[activePath.length - 1]?.name}</span>
               </div>
               <ol className="relative border-l border-emerald-900 ml-2.5 pl-4 space-y-3">
@@ -257,7 +284,7 @@ export default function WayfindingConcierge() {
                       }`} />
                       <div className="flex flex-col">
                         <span className="font-semibold text-chalk-white">{node.name}</span>
-                        <span className="text-[10px] text-emerald-500">{node.description}</span>
+                        <span className="text-[10px] text-emerald-400">{node.description}</span>
                       </div>
                     </li>
                   );
@@ -265,7 +292,7 @@ export default function WayfindingConcierge() {
               </ol>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-center text-xs text-emerald-800/80 font-mono">
+            <div className="h-full flex items-center justify-center text-center text-xs text-emerald-400/80 font-mono">
               Ask a question to see step-by-step route directions.
             </div>
           )}

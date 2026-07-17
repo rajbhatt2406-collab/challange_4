@@ -36,8 +36,8 @@ export default function AccessibilityControls() {
         
         {/* 1. Font Scale */}
         <div className="space-y-2">
-          <span className="text-[10px] text-emerald-600 uppercase flex items-center gap-1">
-            <Type className="w-3.5 h-3.5" />
+          <span className="text-[10px] text-emerald-400 uppercase flex items-center gap-1">
+            <Type className="w-3.5 h-3.5" aria-hidden="true" />
             Font Scale
           </span>
           <div className="flex gap-1 bg-emerald-950/20 p-1 border border-emerald-900/60 rounded">
@@ -48,7 +48,7 @@ export default function AccessibilityControls() {
                   setFontScale(scale);
                   announce(`Font scale set to ${scale}`);
                 }}
-                className={`flex-1 py-1 rounded text-[10px] text-center font-bold transition-colors cursor-pointer uppercase ${
+                className={`flex-1 py-2.5 min-h-[44px] rounded text-[10px] text-center font-bold transition-colors cursor-pointer uppercase ${
                   fontScale === scale
                     ? 'bg-scoreboard-green text-scoreboard-black'
                     : 'text-emerald-400 hover:bg-emerald-900/40'
@@ -63,8 +63,8 @@ export default function AccessibilityControls() {
 
         {/* 2. Contrast Theme */}
         <div className="space-y-2">
-          <span className="text-[10px] text-emerald-600 uppercase flex items-center gap-1">
-            <Eye className="w-3.5 h-3.5" />
+          <span className="text-[10px] text-emerald-400 uppercase flex items-center gap-1">
+            <Eye className="w-3.5 h-3.5" aria-hidden="true" />
             Contrast
           </span>
           <div className="flex gap-1 bg-emerald-950/20 p-1 border border-emerald-900/60 rounded">
@@ -75,7 +75,7 @@ export default function AccessibilityControls() {
                   setContrastTheme(theme);
                   announce(`Contrast set to ${theme}`);
                 }}
-                className={`flex-1 py-1 rounded text-[10px] text-center font-bold transition-colors cursor-pointer uppercase ${
+                className={`flex-1 py-2.5 min-h-[44px] rounded text-[10px] text-center font-bold transition-colors cursor-pointer uppercase ${
                   contrastTheme === theme
                     ? 'bg-scoreboard-green text-scoreboard-black'
                     : 'text-emerald-400 hover:bg-emerald-900/40'
@@ -90,8 +90,8 @@ export default function AccessibilityControls() {
 
         {/* 3. Reduced Motion */}
         <div className="space-y-2">
-          <span className="text-[10px] text-emerald-600 uppercase flex items-center gap-1">
-            <ZapOff className="w-3.5 h-3.5" />
+          <span className="text-[10px] text-emerald-400 uppercase flex items-center gap-1">
+            <ZapOff className="w-3.5 h-3.5" aria-hidden="true" />
             Motion Reducer
           </span>
           <button
@@ -99,7 +99,7 @@ export default function AccessibilityControls() {
               setMotionReduction(!motionReduction);
               announce(`Motion reduction turned ${!motionReduction ? 'on' : 'off'}`);
             }}
-            className={`w-full py-1.5 border rounded text-[10px] font-bold transition-colors cursor-pointer uppercase ${
+            className={`w-full py-2.5 min-h-[44px] border rounded text-[10px] font-bold transition-colors cursor-pointer uppercase ${
               motionReduction
                 ? 'bg-scoreboard-green text-scoreboard-black border-scoreboard-green'
                 : 'bg-emerald-950/20 border-emerald-900/60 text-emerald-400 hover:bg-emerald-900/40'
@@ -112,8 +112,8 @@ export default function AccessibilityControls() {
 
         {/* 4. Plain Language Global Filter */}
         <div className="space-y-2">
-          <span className="text-[10px] text-emerald-600 uppercase flex items-center gap-1">
-            <ShieldAlert className="w-3.5 h-3.5" />
+          <span className="text-[10px] text-emerald-400 uppercase flex items-center gap-1">
+            <ShieldAlert className="w-3.5 h-3.5" aria-hidden="true" />
             Plain Language
           </span>
           <button
@@ -121,7 +121,7 @@ export default function AccessibilityControls() {
               setPlainLanguageMode(!plainLanguageMode);
               announce(`Plain language filter turned ${!plainLanguageMode ? 'on' : 'off'}`);
             }}
-            className={`w-full py-1.5 border rounded text-[10px] font-bold transition-colors cursor-pointer uppercase ${
+            className={`w-full py-2.5 min-h-[44px] border rounded text-[10px] font-bold transition-colors cursor-pointer uppercase ${
               plainLanguageMode
                 ? 'bg-scoreboard-green text-scoreboard-black border-scoreboard-green'
                 : 'bg-emerald-950/20 border-emerald-900/60 text-emerald-400 hover:bg-emerald-900/40'

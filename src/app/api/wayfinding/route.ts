@@ -33,8 +33,10 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.json();
     body = requestSchema.parse(rawBody);
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : 'Invalid request body';
-    return NextResponse.json({ error: errMsg }, { status: 400 });
+    // Security: return a generic message to avoid leaking internal schema details
+    // (Zod v4 ZodError.message includes field paths and allowed enum values)
+    void err;
+    return NextResponse.json({ error: 'Invalid request parameters.' }, { status: 400 });
   }
 
   const { query, startNode } = body;

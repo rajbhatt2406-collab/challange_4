@@ -85,4 +85,24 @@ describe('useTransportOccupancy Hook', () => {
     // Callback is wired; verify it's a function reference
     expect(typeof callback).toBe('function');
   });
+
+  it('triggers alert API when a sector occupancy crosses 85% threshold', async () => {
+    // Mock Math.random to return 1.0, which guarantees occupancy shifts upward (+4.8 bias)
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(1.0);
+    const callback = vi.fn();
+    const { result } = renderHook(() => useTransportOccupancy(callback));
+
+    await act(async () => {
+      vi.advanceTimersByTime(30000);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.alerts.length).toBeGreaterThan(0);
+    expect(callback).toHaveBeenCalled();
+    randomSpy.mockRestore();
+  });
 });

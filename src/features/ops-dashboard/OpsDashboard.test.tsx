@@ -72,7 +72,7 @@ describe('OpsDashboard Component', () => {
       </AccessibilityProvider>
     );
 
-    const textarea = screen.getByPlaceholderText(/Describe incident/i);
+    const textarea = screen.getByPlaceholderText(/Describe incident/i) as HTMLTextAreaElement;
     expect(textarea).toBeInTheDocument();
 
     // Type text into the triage form

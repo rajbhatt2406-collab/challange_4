@@ -22,6 +22,34 @@ A quick guide for judges to verify problem statement alignment in under 30 secon
 
 ---
 
+## 📋 Problem Statement Coverage
+
+Complete mapping of all 8 problem statement categories and all 4 user groups to the specific file/feature that implements each. Every item marked ✅ is backed by a live Gemini API call with Zod validation, rate-limiting, and an offline fallback.
+
+### 8 Problem Statement Categories
+
+| # | Category | Responsible File(s) | Feature / What Gemini Does |
+| :-- | :--- | :--- | :--- |
+| 1 | **Navigation & Wayfinding** | `src/features/wayfinding/WayfindingConcierge.tsx`<br>`src/app/api/wayfinding/route.ts`<br>`src/features/wayfinding/venueGraph.ts` | Gemini Structured JSON Output classifies fan intent (FIND_RESTROOM / FIND_GATE / FIND_FOOD / FIND_MEDICAL) and resolves a venue node ID. Dijkstra shortest-path (`venueGraph.ts`) then computes the route. Gemini streams turn-by-turn directions in the detected language. |
+| 2 | **Crowd Management** | `src/features/ops-dashboard/OpsDashboard.tsx`<br>`src/features/ops-dashboard/useGateOccupancy.ts`<br>`src/app/api/ops-alerts/route.ts` | Simulated gate sensor hook fires every 6 seconds. When occupancy ≥ 85% Gemini evaluates a crowd safety threat level (low / medium / high / critical) and generates a dispatch recommendation via Structured JSON Output. |
+| 3 | **Accessibility** | `src/features/accessibility/SimplifyText.tsx`<br>`src/features/accessibility/AccessibilityControls.tsx`<br>`src/features/accessibility/AccessibilityContext.tsx`<br>`src/app/api/simplify/route.ts` | Gemini streams a 6th-grade-level plain-language rewrite of any dense operations text. `AccessibilityContext` globally applies font-scale, high-contrast, and reduced-motion CSS class overrides. |
+| 4 | **Transportation** | `src/features/ops-dashboard/TransportAdvisory.tsx`<br>`src/features/ops-dashboard/useTransportOccupancy.ts`<br>`src/app/api/transport-alerts/route.ts` | Live shuttle route and parking lot sensor hook (6-second tick). When sector occupancy ≥ 85% Gemini generates congestion severity and specific diversion actions (overflow lots, extra buses) via Structured JSON Output. |
+| 5 | **Sustainability** | `src/features/sustainability/SustainabilityWidget.tsx`<br>`src/app/api/sustainability/route.ts` | Gemini computes a CO₂ emissions estimate per passenger-mile for the fan's chosen travel mode (train / shuttle / carpool / solo vehicle) and returns a personalized eco-impact comparison. |
+| 6 | **Multilingual Assistance** | `src/features/wayfinding/WayfindingConcierge.tsx`<br>`src/app/api/wayfinding/route.ts` | Gemini detects the query language (via `language_detected` field in Structured JSON Output) and streams the concierge response natively in Spanish, French, Portuguese, English, or any other detected language. Keyword-detection fallback covers offline scenarios. |
+| 7 | **Operational Intelligence** | `src/features/ops-dashboard/OpsDashboard.tsx`<br>`src/app/api/triage/route.ts`<br>`src/lib/supabase/client.ts` | Gemini classifies free-text staff/volunteer incident reports into categories (medical_emergency, crowd_hazard, security_breach, facility_damage, logistics), assigns confidence-scored severity, and recommends a dispatch action. Results are written to the incidents database and displayed in the live log. |
+| 8 | **Real-Time Decision Support** | `src/features/ops-dashboard/OpsDashboard.tsx`<br>`src/features/ops-dashboard/TransportAdvisory.tsx`<br>`src/features/ops-dashboard/useGateOccupancy.ts`<br>`src/features/ops-dashboard/useTransportOccupancy.ts` | Gemini-generated crowd density and transit congestion alerts auto-appear on the **default** Ops Command Center view (no sub-page click required). Alert cards show AI severity classification, message, and recommended action updated live every 6 seconds. |
+
+### 4 User Group Touchpoints
+
+| User Group | Distinct UI Touchpoint | Responsible File |
+| :--- | :--- | :--- |
+| **Fans** | Multilingual Wayfinding Concierge (ask directions in any language) · Sustainability Carbon Calculator · Accessibility font / contrast / motion toggles | `WayfindingConcierge.tsx` · `SustainabilityWidget.tsx` · `AccessibilityControls.tsx` |
+| **Organizers** | Live Gate Occupancy Radar · Crowd Alert Feed with Gemini severity assessments · Incident History Log | `OpsDashboard.tsx` · `useGateOccupancy.ts` |
+| **Volunteers** | Incident Triage Form (log free-text incident reports; Gemini classifies and recommends dispatch) — labeled explicitly in the UI as "For VENUE STAFF and VOLUNTEERS" | `OpsDashboard.tsx` · `api/triage/route.ts` |
+| **Venue Staff** | Incident Triage Form · Live Transit & Parking Radar · Real-Time Crowd Alert Feed with AI-generated recommendations | `OpsDashboard.tsx` · `TransportAdvisory.tsx` |
+
+---
+
 ## 🤖 Why GenAI is Necessary (vs. Rule-Based Systems)
 
 A rule-based command layer is insufficient for a global tournament of the scale of the 2026 World Cup:

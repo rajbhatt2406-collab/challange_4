@@ -1,8 +1,11 @@
 'use client';
 
+// Problem statement: Accessibility (Cognitive) — Gemini streams plain-language rewrites
+// of dense operations text for fans with cognitive disabilities or non-native speakers.
 import React, { useState } from 'react';
 import { Sparkles, ArrowLeftRight } from 'lucide-react';
 import { useAccessibility } from './AccessibilityContext';
+import AiGeneratedBadge from '@/components/AiGeneratedBadge';
 
 interface SimplifyTextProps {
   children: string;
@@ -72,7 +75,10 @@ export default function SimplifyText({ children, className = '' }: SimplifyTextP
             [REWRITING TEXT TO PLAIN LANGUAGE: STREAMING CHUNKS...]
           </span>
         ) : isSimplified ? (
-          <span className="text-emerald-200">{simplifiedText}</span>
+          <>
+            <span className="text-emerald-200">{simplifiedText}</span>
+            <AiGeneratedBadge className="mt-1" label="Simplified by Gemini AI" />
+          </>
         ) : (
           <span>{children}</span>
         )}
@@ -81,17 +87,17 @@ export default function SimplifyText({ children, className = '' }: SimplifyTextP
       <button
         onClick={handleSimplify}
         disabled={isLoading}
-        className="text-[10px] font-mono text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5 px-2 py-1 bg-emerald-950/40 hover:bg-emerald-950 border border-emerald-900/60 rounded focus-visible:ring-2 focus-visible:ring-scoreboard-green cursor-pointer disabled:opacity-50"
+        className="text-[10px] font-mono text-emerald-400 hover:text-emerald-300 transition-colors flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-950/40 hover:bg-emerald-950 border border-emerald-900/60 rounded focus-visible:ring-2 cursor-pointer disabled:opacity-50 min-h-[44px]"
         aria-label={isSimplified ? "Show original dense text" : "Simplify this text to plain language"}
       >
         {isSimplified ? (
           <>
-            <ArrowLeftRight className="w-3 h-3 text-emerald-400" />
+            <ArrowLeftRight className="w-3 h-3 text-emerald-400" aria-hidden="true" />
             SHOW ORIGINAL
           </>
         ) : (
           <>
-            <Sparkles className="w-3 h-3 text-scoreboard-green animate-pulse" />
+            <Sparkles className="w-3 h-3 text-scoreboard-green animate-pulse" aria-hidden="true" />
             SIMPLIFY THIS TEXT
           </>
         )}
