@@ -1,19 +1,29 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from './route';
 
-// Gemini success mock
+let shouldMockFail = false;
+
+vi.mock('@/lib/gemini/rateLimiter', () => ({
+  isAllowed: () => true
+}));
+
 vi.mock('@/lib/gemini/client', () => ({
   getGeminiModel: () => ({
-    generateContent: vi.fn().mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({
-          severity: 'high',
-          message: 'Gate A is highly congested.',
-          recommended_action: 'Divert fans to Gate B.',
-          confidence: 0.91
-        })
+    generateContent: vi.fn().mockImplementation(() => {
+      if (shouldMockFail) {
+        return Promise.reject(new Error('API key invalid'));
       }
+      return Promise.resolve({
+        response: {
+          text: () => JSON.stringify({
+            severity: 'high',
+            message: 'Gate A is highly congested.',
+            recommended_action: 'Divert fans to Gate B.',
+            confidence: 0.91
+          })
+        }
+      });
     })
   })
 }));
@@ -27,9 +37,17 @@ function makeRequest(body: object, ip = '10.0.0.50') {
   });
 }
 
-describe('ops-alerts API Route — Additional Coverage', () => {
+describe('ops-alerts API Route — Additional Coverage & Boundary Conditions', () => {
+  let consoleSpy: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    shouldMockFail = false;
+    consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('returns 200 with Gemini structured response for valid gate-a input', async () => {
@@ -62,31 +80,62 @@ describe('ops-alerts API Route — Additional Coverage', () => {
   });
 
   it('falls back to deterministic response when Gemini throws', async () => {
-    vi.mock('@/lib/gemini/client', () => ({
-      getGeminiModel: () => ({
-        generateContent: vi.fn().mockRejectedValue(new Error('API key invalid'))
-      })
-    }));
+    shouldMockFail = true;
 
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    // Re-import to pick up new mock
-    const { POST: POST2 } = await import('./route');
-    const res = await POST2(makeRequest({ gateId: 'gate-b', occupancy: 95 }));
+    const res = await POST(makeRequest({ gateId: 'gate-b', occupancy: 95 }));
     expect(res.status).toBe(200);
 
     const json = await res.json();
-    // Fallback should return critical for 95%
-    expect(['critical', 'high', 'medium', 'low']).toContain(json.severity);
-    consoleSpy.mockRestore();
+    expect(json.severity).toBe('critical');
   });
 
   it('accepts all 4 valid gate IDs without validation error', async () => {
     const gateIds = ['gate-a', 'gate-b', 'gate-c', 'gate-d'];
     for (const gateId of gateIds) {
       const res = await POST(makeRequest({ gateId, occupancy: 50 }));
-      // Should not be 400 (validation error)
       expect(res.status).not.toBe(400);
     }
+  });
+
+  describe('Fallback Classifier Boundary Conditions', () => {
+    beforeEach(() => {
+      shouldMockFail = true;
+    });
+
+    it('returns critical severity at exactly 95% occupancy', async () => {
+      const res = await POST(makeRequest({ gateId: 'gate-a', occupancy: 95 }));
+      const json = await res.json();
+      expect(json.severity).toBe('critical');
+    });
+
+    it('returns high severity at exactly 94% occupancy', async () => {
+      const res = await POST(makeRequest({ gateId: 'gate-a', occupancy: 94 }));
+      const json = await res.json();
+      expect(json.severity).toBe('high');
+    });
+
+    it('returns high severity at exactly 85% occupancy', async () => {
+      const res = await POST(makeRequest({ gateId: 'gate-a', occupancy: 85 }));
+      const json = await res.json();
+      expect(json.severity).toBe('high');
+    });
+
+    it('returns medium severity at exactly 84% occupancy', async () => {
+      const res = await POST(makeRequest({ gateId: 'gate-a', occupancy: 84 }));
+      const json = await res.json();
+      expect(json.severity).toBe('medium');
+    });
+
+    it('returns medium severity at exactly 80% occupancy', async () => {
+      const res = await POST(makeRequest({ gateId: 'gate-a', occupancy: 80 }));
+      const json = await res.json();
+      expect(json.severity).toBe('medium');
+    });
+
+    it('returns low severity at exactly 79% occupancy', async () => {
+      const res = await POST(makeRequest({ gateId: 'gate-a', occupancy: 79 }));
+      const json = await res.json();
+      expect(json.severity).toBe('low');
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGeminiModel } from '@/lib/gemini/client';
+import { sanitizeError } from '@/lib/gemini/sanitize';
 import { isAllowed } from '@/lib/gemini/rateLimiter';
 import { VENUE_NODES } from '@/features/wayfinding/venueGraph';
 import { Schema } from '@google/generative-ai';
@@ -72,7 +73,12 @@ export async function POST(req: NextRequest) {
       required: ['intent', 'destination_id', 'language_detected', 'translated_response']
     } as unknown as Schema;
 
-    const prompt = `User at start node "${startNode}" asks: "${sanitizedQuery}".
+    const prompt = `User is at start node "${startNode}".
+    
+    [START OF USER QUERY]
+    ${sanitizedQuery}
+    [END OF USER QUERY]
+    
     Classify their intent and map it to the closest venue destination ID in our stadium map.
     Provide the response in the user's language.`;
 
@@ -95,8 +101,16 @@ export async function POST(req: NextRequest) {
     // 4. Stream detailed directions token-by-token
     const streamingModel = getGeminiModel('gemini-1.5-flash');
     const streamPrompt = `You are a friendly World Cup 2026 stadium wayfinding helper.
-    The user is asking: "${sanitizedQuery}" (detected language: ${language_detected}).
-    The classified intent is ${intent} and destination node is "${destination_id}" (described as: "${VENUE_NODES.find(n => n.id === destination_id)?.description}").
+    The user is asking a query:
+    [START OF USER QUERY]
+    ${sanitizedQuery}
+    [END OF USER QUERY]
+    
+    Additional Context:
+    - Detected language: ${language_detected}
+    - Classified intent: ${intent}
+    - Destination node: "${destination_id}" (described as: "${VENUE_NODES.find(n => n.id === destination_id)?.description}")
+    
     Write a short, friendly guiding response (2-3 sentences max) in the language "${language_detected}".
     Start directly with the directions, beginning with: "${translated_response}". Do not add markdown or headers.`;
 
@@ -135,7 +149,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.warn('Gemini wayfinding failed (e.g. invalid key). Falling back to keyword search.', error);
+    console.warn('Gemini wayfinding failed (e.g. invalid key). Falling back to keyword search.', sanitizeError(error));
 
     const queryLower = sanitizedQuery.toLowerCase();
     let intent = 'HELP';

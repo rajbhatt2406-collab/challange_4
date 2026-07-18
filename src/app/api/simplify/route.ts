@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGeminiModel } from '@/lib/gemini/client';
+import { sanitizeError } from '@/lib/gemini/sanitize';
 import { isAllowed } from '@/lib/gemini/rateLimiter';
 
 const simplifySchema = z.object({
@@ -37,8 +38,9 @@ export async function POST(req: NextRequest) {
     Use simple words and shorter sentences suitable for fans with cognitive disabilities or non-native speakers.
     Keep the core information intact.
     
-    Original Text:
-    "${text}"
+    [START OF USER TEXT TO SIMPLIFY]
+    ${text}
+    [END OF USER TEXT TO SIMPLIFY]
     
     Plain Language Version:`;
 
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.warn('Gemini simplify failed (e.g. invalid key). Falling back to mock simplifier.', error);
+    console.warn('Gemini simplify failed (e.g. invalid key). Falling back to mock simplifier.', sanitizeError(error));
     
     // Fallback simply returns a shortened or cleaned version of the text
     const fallbackText = text.length > 100 

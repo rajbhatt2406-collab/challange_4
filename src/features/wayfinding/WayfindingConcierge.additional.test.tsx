@@ -110,7 +110,7 @@ describe('WayfindingConcierge Additional Operations & Accessibility', () => {
     expect(mockAskQuestion).toHaveBeenCalledWith('Where is the restroom?');
   });
 
-  it('announces new messages to screen readers and dynamically updates html lang attribute on language detection', () => {
+  it('announces new messages to screen readers and dynamically updates html lang and dir attributes on language detection', () => {
     // 1. Render with English response
     const { rerender } = render(
       <AccessibilityProvider>
@@ -119,8 +119,9 @@ describe('WayfindingConcierge Additional Operations & Accessibility', () => {
     );
 
     expect(document.documentElement.lang).toBe('en');
+    expect(document.documentElement.dir).toBe('ltr');
 
-    // 2. Change response to Spanish
+    // 2. Change response to Spanish (LTR)
     mockMessages = [
       { id: '1', role: 'user', content: '¿Dónde está el baño?' },
       { id: '2', role: 'assistant', content: 'El baño está cerca.', intent: 'FIND_RESTROOM', destinationId: 'restroom-acc-s1', languageDetected: 'es' }
@@ -133,11 +134,28 @@ describe('WayfindingConcierge Additional Operations & Accessibility', () => {
       </AccessibilityProvider>
     );
 
-    // Verify document lang is updated to 'es'
+    // Verify document lang is updated to 'es' and dir is 'ltr'
     expect(document.documentElement.lang).toBe('es');
+    expect(document.documentElement.dir).toBe('ltr');
 
     // Verify announcement is dispatched to the sr-live-region
     const srLiveRegion = document.getElementById('sr-live-region');
     expect(srLiveRegion).toHaveTextContent(/Assistant response: El baño está cerca./i);
+
+    // 3. Change response to Arabic (RTL)
+    mockMessages = [
+      { id: '1', role: 'user', content: 'أين دورة المياه؟' },
+      { id: '2', role: 'assistant', content: 'دورة المياه قريبة.', intent: 'FIND_RESTROOM', destinationId: 'restroom-acc-s1', languageDetected: 'ar' }
+    ];
+
+    rerender(
+      <AccessibilityProvider>
+        <WayfindingConcierge />
+      </AccessibilityProvider>
+    );
+
+    // Verify document lang is updated to 'ar' and dir is 'rtl'
+    expect(document.documentElement.lang).toBe('ar');
+    expect(document.documentElement.dir).toBe('rtl');
   });
 });

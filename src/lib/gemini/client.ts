@@ -17,3 +17,5 @@ export const genAI = new GoogleGenerativeAI(apiKey || 'MOCK_KEY');
 export function getGeminiModel(modelName = 'gemini-1.5-flash') {
   return genAI.getGenerativeModel({ model: modelName });
 }
+
+

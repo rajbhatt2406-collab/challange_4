@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGeminiModel } from '@/lib/gemini/client';
+import { sanitizeError } from '@/lib/gemini/sanitize';
 import { isAllowed } from '@/lib/gemini/rateLimiter';
 import { Schema } from '@google/generative-ai';
 
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(parsedResponse);
 
   } catch (error) {
-    console.warn('Gemini transport evaluation failed (e.g. invalid key). Falling back to mock evaluator.', error);
+    console.warn('Gemini transport evaluation failed (e.g. invalid key). Falling back to mock evaluator.', sanitizeError(error));
     
     // Hardcoded fallback safety/congestion limits
     let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';

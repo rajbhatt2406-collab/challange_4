@@ -50,7 +50,7 @@ export default function WayfindingConcierge() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamText]);
 
-  // Screen reader announcements for new assistant responses & HTML document lang updates
+  // Screen reader announcements for new assistant responses & HTML document lang/dir updates
   useEffect(() => {
     if (typeof document === 'undefined') return;
     if (messages.length > 0) {
@@ -59,12 +59,16 @@ export default function WayfindingConcierge() {
         announce(`Assistant response: ${lastMsg.content}`);
         if (lastMsg.languageDetected) {
           document.documentElement.lang = lastMsg.languageDetected;
+          const isRtl = lastMsg.languageDetected === 'ar' || lastMsg.languageDetected.startsWith('ar-');
+          document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
         } else {
           document.documentElement.lang = 'en';
+          document.documentElement.dir = 'ltr';
         }
       }
     } else {
       document.documentElement.lang = 'en';
+      document.documentElement.dir = 'ltr';
     }
   }, [messages, announce]);
 

@@ -27,6 +27,25 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [plainLanguageMode, setPlainLanguageMode] = useState<boolean>(false);
   const [announcement, setAnnouncement] = useState<string>('');
 
+  // Synchronize motionReduction state with system preferences
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setMotionReduction(mediaQuery.matches);
+
+    const listener = (e: MediaQueryListEvent) => {
+      setMotionReduction(e.matches);
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    } else {
+      mediaQuery.addListener(listener);
+      return () => mediaQuery.removeListener(listener);
+    }
+  }, []);
+
   // Handle document class modifications for global settings
   useEffect(() => {
     if (typeof document === 'undefined') return;

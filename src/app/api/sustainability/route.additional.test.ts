@@ -2,15 +2,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from './route';
 
+let shouldMockFail = false;
+
 vi.mock('@/lib/gemini/client', () => ({
   getGeminiModel: () => ({
-    generateContent: vi.fn().mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({
-          estimate: '0.05 kg CO2',
-          comparison: 'Train travel reduces emissions by 85% compared to solo vehicles.'
-        })
+    generateContent: vi.fn().mockImplementation(() => {
+      if (shouldMockFail) {
+        return Promise.reject(new Error('No key'));
       }
+      return Promise.resolve({
+        response: {
+          text: () => JSON.stringify({
+            estimate: '0.05 kg CO2',
+            comparison: 'Train travel reduces emissions by 85% compared to solo vehicles.'
+          })
+        }
+      });
     })
   })
 }));
@@ -26,6 +33,7 @@ function makeRequest(body: object, ip = '10.0.0.90') {
 describe('sustainability API Route — Additional Coverage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    shouldMockFail = false;
   });
 
   it('returns valid CO2 estimate for train mode', async () => {
@@ -55,17 +63,11 @@ describe('sustainability API Route — Additional Coverage', () => {
   });
 
   it('fallback returns distinct estimates per mode', async () => {
-    vi.mock('@/lib/gemini/client', () => ({
-      getGeminiModel: () => ({
-        generateContent: vi.fn().mockRejectedValue(new Error('No key'))
-      })
-    }));
+    shouldMockFail = true;
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const { POST: POST2 } = await import('./route');
-
-    const trainRes = await POST2(makeRequest({ transportMode: 'train' }));
-    const soloRes = await POST2(makeRequest({ transportMode: 'solo_vehicle' }));
+    const trainRes = await POST(makeRequest({ transportMode: 'train' }));
+    const soloRes = await POST(makeRequest({ transportMode: 'solo_vehicle' }));
 
     const trainJson = await trainRes.json();
     const soloJson = await soloRes.json();

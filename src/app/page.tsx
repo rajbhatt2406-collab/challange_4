@@ -14,6 +14,14 @@ import FanPulseAbout from '@/features/FanPulseAbout';
 export default function CommandCenter() {
   return (
     <AccessibilityProvider>
+      {/* Skip Link for Keyboard Navigation */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-scoreboard-green focus:text-scoreboard-black focus:p-3 focus:rounded-lg focus:font-semibold focus:font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400"
+      >
+        Skip to main content
+      </a>
+
       <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
         
         {/* Stadium Command Header */}
@@ -60,8 +68,10 @@ export default function CommandCenter() {
 
         {/* Main Command Dashboard Layout */}
         <main 
+          id="main-content"
           className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-8"
           role="main"
+          tabIndex={-1}
         >
           {/* Section 0: FanPulse AI — Problem Statement Coverage (evaluator-first panel) */}
           <section aria-label="About FanPulse AI Coverage">

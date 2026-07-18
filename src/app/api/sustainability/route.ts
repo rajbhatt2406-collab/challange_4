@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGeminiModel } from '@/lib/gemini/client';
+import { sanitizeError } from '@/lib/gemini/sanitize';
 import { isAllowed } from '@/lib/gemini/rateLimiter';
 import { Schema } from '@google/generative-ai';
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(parsedResponse);
 
   } catch (error) {
-    console.warn('Gemini sustainability failed (e.g. invalid key). Falling back to mock values.', error);
+    console.warn('Gemini sustainability failed (e.g. invalid key). Falling back to mock values.', sanitizeError(error));
 
     let estimate = '0.05 kg CO2';
     let comparison = 'Taking the Metrolink mass transit train saves around 85% carbon output compared to traveling by solo car.';

@@ -1,18 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from './route';
 
+let shouldMockFail = false;
+
 vi.mock('@/lib/gemini/client', () => ({
   getGeminiModel: () => ({
-    generateContent: vi.fn().mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({
-          severity: 'critical',
-          message: 'Shuttle express is at maximum capacity.',
-          recommended_action: 'Deploy 3 additional buses.',
-          confidence: 0.95
-        })
+    generateContent: vi.fn().mockImplementation(() => {
+      if (shouldMockFail) {
+        return Promise.reject(new Error('Gemini down'));
       }
+      return Promise.resolve({
+        response: {
+          text: () => JSON.stringify({
+            severity: 'critical',
+            message: 'Shuttle express is at maximum capacity.',
+            recommended_action: 'Deploy 3 additional buses.',
+            confidence: 0.95
+          })
+        }
+      });
     })
   })
 }));
@@ -26,8 +33,16 @@ function makeRequest(body: object, ip = '10.0.0.60') {
 }
 
 describe('transport-alerts API Route — Additional Coverage', () => {
+  let consoleSpy: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    shouldMockFail = false;
+    consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('returns 200 for valid shuttle-express at 95% occupancy', async () => {
@@ -62,18 +77,11 @@ describe('transport-alerts API Route — Additional Coverage', () => {
   });
 
   it('fallback returns valid severity for 80% occupancy (medium threshold)', async () => {
-    vi.mock('@/lib/gemini/client', () => ({
-      getGeminiModel: () => ({
-        generateContent: vi.fn().mockRejectedValue(new Error('Gemini down'))
-      })
-    }));
+    shouldMockFail = true;
 
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { POST: POST2 } = await import('./route');
-    const res = await POST2(makeRequest({ transportId: 'lot-east', occupancy: 80 }));
+    const res = await POST(makeRequest({ transportId: 'lot-east', occupancy: 80 }));
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(['low', 'medium', 'high', 'critical']).toContain(json.severity);
-    consoleSpy.mockRestore();
+    expect(json.severity).toBe('medium');
   });
 });

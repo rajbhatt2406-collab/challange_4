@@ -95,7 +95,7 @@ describe('OpsDashboard Additional Operations', () => {
     expect(textarea.value).toBe('');
   });
 
-  it('handles submission fetch failures gracefully', async () => {
+  it('handles submission fetch failures gracefully and announces error to screen readers', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
       json: () => Promise.resolve({ error: 'Network overload' })
@@ -119,5 +119,13 @@ describe('OpsDashboard Additional Operations', () => {
 
     const errorMsg = await screen.findByText('Network overload');
     expect(errorMsg).toBeInTheDocument();
+    
+    // Assert accessibility roles & live attributes are present
+    expect(errorMsg.getAttribute('role')).toBe('alert');
+    expect(errorMsg.getAttribute('aria-live')).toBe('assertive');
+
+    // Assert announcement was dispatched
+    const srLiveRegion = document.getElementById('sr-live-region');
+    expect(srLiveRegion).toHaveTextContent(/Error submitting incident report: Network overload/i);
   });
 });

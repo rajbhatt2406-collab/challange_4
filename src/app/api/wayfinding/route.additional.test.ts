@@ -1,22 +1,34 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from './route';
 
-// Default mock: Gemini returns success
+let shouldMockFail = false;
+
+// Default mock: Gemini returns success or fails dynamically
 vi.mock('@/lib/gemini/client', () => ({
   getGeminiModel: () => ({
-    generateContent: vi.fn().mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({
-          intent: 'FIND_RESTROOM',
-          destination_id: 'restroom-n1',
-          language_detected: 'en',
-          translated_response: 'I will guide you to the restroom.'
-        })
+    generateContent: vi.fn().mockImplementation(() => {
+      if (shouldMockFail) {
+        return Promise.reject(new Error('No API key'));
       }
+      return Promise.resolve({
+        response: {
+          text: () => JSON.stringify({
+            intent: 'FIND_RESTROOM',
+            destination_id: 'restroom-n1',
+            language_detected: 'en',
+            translated_response: 'I will guide you to the restroom.'
+          })
+        }
+      });
     }),
-    generateContentStream: vi.fn().mockResolvedValue({
-      stream: [{ text: () => 'Head north toward Section 112.' }]
+    generateContentStream: vi.fn().mockImplementation(() => {
+      if (shouldMockFail) {
+        return Promise.reject(new Error('No API key'));
+      }
+      return Promise.resolve({
+        stream: [{ text: () => 'Head north toward Section 112.' }]
+      });
     })
   })
 }));
@@ -30,21 +42,26 @@ function makeRequest(body: object, ip = '10.0.0.70') {
 }
 
 describe('wayfinding API Route — Additional Coverage', () => {
+  let consoleSpy: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    shouldMockFail = false;
+    consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
   });
 
   it('returns 400 when query exceeds 500 characters', async () => {
     const longQuery = 'x'.repeat(501);
-    const res = await makeRequest({ query: longQuery, startNode: 'gate-a' });
-    // We need to actually call POST
     const response = await POST(new NextRequest('http://localhost/api/wayfinding', {
       method: 'POST',
       headers: { 'x-forwarded-for': '10.0.0.70' },
       body: JSON.stringify({ query: longQuery, startNode: 'gate-a' })
     }));
     expect(response.status).toBe(400);
-    void res;
   });
 
   it('returns 400 for invalid startNode not in venue graph', async () => {
@@ -61,38 +78,19 @@ describe('wayfinding API Route — Additional Coverage', () => {
   });
 
   it('fallback: detects Spanish query and returns es language', async () => {
-    // Override mock to throw so fallback is triggered
-    vi.mock('@/lib/gemini/client', () => ({
-      getGeminiModel: () => ({
-        generateContent: vi.fn().mockRejectedValue(new Error('No API key')),
-        generateContentStream: vi.fn().mockRejectedValue(new Error('No API key'))
-      })
-    }));
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    shouldMockFail = true;
 
-    const { POST: POST2 } = await import('./route');
-    const response = await POST2(makeRequest({ query: '¿Dónde está el baño?', startNode: 'gate-a' }));
+    const response = await POST(makeRequest({ query: '¿Dónde está el baño?', startNode: 'gate-a' }));
     expect(response.status).toBe(200);
     expect(response.headers.get('x-language-detected')).toBe('es');
-
-    consoleSpy.mockRestore();
   });
 
   it('fallback: detects French query', async () => {
-    vi.mock('@/lib/gemini/client', () => ({
-      getGeminiModel: () => ({
-        generateContent: vi.fn().mockRejectedValue(new Error('No API key')),
-        generateContentStream: vi.fn().mockRejectedValue(new Error('No API key'))
-      })
-    }));
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    shouldMockFail = true;
 
-    const { POST: POST2 } = await import('./route');
-    const response = await POST2(makeRequest({ query: 'Où sont les toilettes?', startNode: 'gate-a' }));
+    const response = await POST(makeRequest({ query: 'Où sont les toilettes?', startNode: 'gate-a' }));
     expect(response.status).toBe(200);
     expect(response.headers.get('x-language-detected')).toBe('fr');
-
-    consoleSpy.mockRestore();
   });
 
   it('returns 400 for empty query string', async () => {

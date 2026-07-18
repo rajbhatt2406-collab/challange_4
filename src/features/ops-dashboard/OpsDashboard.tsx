@@ -103,6 +103,7 @@ export default function OpsDashboard() {
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Triage request encountered an error.';
       setFormError(errMsg);
+      announce(`Error submitting incident report: ${errMsg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -251,6 +252,8 @@ export default function OpsDashboard() {
               {formError && (
                 <div 
                   id="triage-form-error"
+                  role="alert"
+                  aria-live="assertive"
                   className="p-3 bg-scoreboard-red/10 border border-scoreboard-red/30 rounded text-xs text-scoreboard-red font-mono"
                 >
                   {formError}

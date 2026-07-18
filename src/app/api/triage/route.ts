@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGeminiModel } from '@/lib/gemini/client';
+import { sanitizeError } from '@/lib/gemini/sanitize';
 import { isAllowed } from '@/lib/gemini/rateLimiter';
 import { insertIncident } from '@/lib/supabase/client';
 import { Schema } from '@google/generative-ai';
@@ -63,7 +64,12 @@ export async function POST(req: NextRequest) {
       required: ['classification', 'recommended_action', 'severity', 'confidence']
     } as unknown as Schema;
 
-    const prompt = `Analyze this stadium operations incident report: "${sanitizedDescription}".
+    const prompt = `Analyze this stadium operations incident report.
+    
+    [START OF INCIDENT REPORT]
+    ${sanitizedDescription}
+    [END OF INCIDENT REPORT]
+    
     Classify the category, assign severity, recommend an action, and estimate confidence.`;
 
     const result = await model.generateContent({
@@ -100,7 +106,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.warn('Gemini triage failed (e.g. invalid key). Falling back to keyword evaluator.', error);
+    console.warn('Gemini triage failed (e.g. invalid key). Falling back to keyword evaluator.', sanitizeError(error));
 
     const descLower = sanitizedDescription.toLowerCase();
     let classification = 'logistics';
